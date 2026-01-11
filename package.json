@@ -1,0 +1,14 @@
+{
+  "name": "express-api",
+  "version": "1.0.0",
+  "description": "demo api for devops training",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Abeetha Abeysundera",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
