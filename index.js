@@ -8,6 +8,10 @@ let customers = [
     { id: 1, name: "John", email: "john@test.com", mobile: "1234567890" },
     { id: 2, name: "David", email: "david@test.com", mobile: "9876543210" }
 ];
+// ROOT - Homepage
+app.get('/', (req, res) => {
+    res.status(200).send('Welcome to Customer API 🚀 Use /customers to access the API');
+});
 
 // GET - Get all customers
 app.get('/customers', (req, res) => {
