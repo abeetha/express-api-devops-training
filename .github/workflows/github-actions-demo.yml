@@ -1,5 +1,4 @@
 name: Express JS CI/CD
-
 on:
   push:
     branches:
