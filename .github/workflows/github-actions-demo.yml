@@ -1,44 +1,101 @@
-- name: Deploy to EC2
-  env:
-    EC2_HOST: ${{ secrets.EC2_HOST }}
-    EC2_USER: ubuntu
-    APP_DIR: /home/ubuntu/backends/express-api-devops-training
+name: Express JS CI/CD
 
-  run: |
-    ssh "${EC2_USER}@${EC2_HOST}" << 'EOF'
-      set -e
+on:
+  push:
+    branches:
+      - main
 
-      # Load NVM for non-interactive SSH session
-      export NVM_DIR="$HOME/.nvm"
+  pull_request:
+    branches:
+      - main
 
-      if [ -s "$NVM_DIR/nvm.sh" ]; then
-        source "$NVM_DIR/nvm.sh"
-      fi
+jobs:
+  ci:
+    name: CI - Install Dependencies
+    runs-on: ubuntu-latest
 
-      echo "Node version:"
-      node -v
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-      echo "NPM version:"
-      npm -v
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-      echo "PM2 version:"
-      pm2 -v
+      - name: Install dependencies
+        run: npm ci
 
-      cd /home/ubuntu/backends/express-api-devops-training
+      - name: Check Node and npm
+        run: |
+          node --version
+          npm --version
 
-      echo "Pulling latest code..."
-      git fetch origin main
-      git reset --hard origin/main
+  deploy:
+    name: CD - Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: ci
 
-      echo "Installing dependencies..."
-      npm ci --omit=dev
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-      echo "Restarting PM2 application..."
-      pm2 restart 0 --update-env
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
 
-      echo "Saving PM2 process list..."
-      pm2 save
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      echo "Deployment completed successfully!"
-      pm2 status
-    EOF
+      - name: Add EC2 host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ubuntu
+          APP_DIR: /home/ubuntu/backends/express-api-devops-training
+
+        run: |
+          ssh "${EC2_USER}@${EC2_HOST}" << 'EOF'
+            set -e
+
+            echo "Loading NVM..."
+
+            export NVM_DIR="$HOME/.nvm"
+
+            if [ -s "$NVM_DIR/nvm.sh" ]; then
+              source "$NVM_DIR/nvm.sh"
+            fi
+
+            echo "Node version:"
+            node -v
+
+            echo "NPM version:"
+            npm -v
+
+            echo "PM2 version:"
+            pm2 -v
+
+            cd /home/ubuntu/backends/express-api-devops-training
+
+            echo "Pulling latest code..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Installing dependencies..."
+            npm ci --omit=dev
+
+            echo "Restarting PM2 application..."
+            pm2 restart 0 --update-env
+
+            echo "Saving PM2 process list..."
+            pm2 save
+
+            echo "Deployment completed successfully!"
+
+            pm2 status
+          EOF
