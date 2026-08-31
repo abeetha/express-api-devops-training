@@ -1,4 +1,3 @@
-```yaml
 name: Express JS CI/CD
 
 on:
@@ -81,4 +80,4 @@ jobs:
             echo "Deployment completed successfully."
             pm2 status 0
           EOF
-```
+
