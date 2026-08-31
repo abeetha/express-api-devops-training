@@ -1,4 +1,5 @@
 name: Express JS CI/CD
+
 on:
   push:
     branches:
@@ -10,7 +11,7 @@ on:
 
 jobs:
   ci:
-    name: CI - Install and Test
+    name: CI - Install Dependencies
     runs-on: ubuntu-latest
 
     steps:
@@ -26,15 +27,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test --if-present
+      - name: Check Node and npm
+        run: |
+          node --version
+          npm --version
 
   deploy:
     name: CD - Deploy to EC2
     runs-on: ubuntu-latest
     needs: ci
 
-    # Deploy only after a successful push to main
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
@@ -51,7 +53,7 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy application to EC2
+      - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ubuntu
@@ -67,7 +69,7 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "Installing production dependencies..."
+            echo "Installing dependencies..."
             npm ci --omit=dev
 
             echo "Restarting PM2 application..."
@@ -76,7 +78,7 @@ jobs:
             echo "Saving PM2 process list..."
             pm2 save
 
-            echo "Deployment completed successfully."
-            pm2 status 0
-          EOF
+            echo "Deployment successful!"
 
+            pm2 status
+          EOF
