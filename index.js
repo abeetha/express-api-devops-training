@@ -10,7 +10,7 @@ let customers = [
 ];
 // ROOT - Homepage
 app.get('/', (req, res) => {
-    res.status(200).send('Welcome to Customer API 🚀 Use /customers to access the API');
+    res.status(200).send('Welcome to Customer API 1 🚀 Use /customers to access the API');
 });
 
 // GET - Get all customers
